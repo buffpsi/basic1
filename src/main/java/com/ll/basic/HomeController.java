@@ -1,17 +1,19 @@
 package com.ll.basic;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 
 // @Controller 의 의미
 // 개발자가 스프링부트에게 말한다.
@@ -19,9 +21,11 @@ import java.util.Map;
 @Controller
 public class HomeController {
     private int count;
+    private List<Person> people;
 
     public HomeController() {
         count = -1;
+        people = new ArrayList<>();
     }
 
     // @GetMapping("/home/main") 의 의미
@@ -194,6 +198,87 @@ public class HomeController {
 
         return list;
     }
+
+    @GetMapping("/home/addPerson")
+    @ResponseBody
+    public String addPerson(String name, int age) {
+        Person p = new Person(name, age);
+
+        System.out.println(p);
+
+        people.add(p);
+
+        return "%d번 사람이 추가되었습니다.".formatted(p.getId());
+    }
+
+    @GetMapping("/home/people")
+    @ResponseBody
+    public List<Person> showPeople() {
+        return people;
+    }
+
+    @GetMapping("/home/removePerson")
+    @ResponseBody
+    public String removePerson(int id) {
+        // person -> person.getId() == id
+        // 위 함수가 참인 엘리먼트(요소) 경우가 존재하면, 해당 요소를 삭제한다.
+        // removed 에는 삭제수행여부가 저장된다.
+        // 조건에 맞는걸 찾았고 삭제까지 되었다면 true, 아니면 false
+        boolean removed = people.removeIf(person -> person.getId() == id);
+
+        if (removed == false) {
+            return "%d번 사람이 존재하지 않습니다.".formatted(id);
+        }
+
+        return "%d번 사람이 삭제되었습니다.".formatted(id);
+    }
+
+    @GetMapping("/home/modifyPerson")
+    @ResponseBody
+    public String modifyPerson(int id, String name, int age) {
+        Person found = people
+                .stream()
+                .filter(p -> p.getId() == id)
+                .findFirst()
+                .orElse(null);
+
+        if (found == null) {
+            return "%d번 사람이 존재하지 않습니다.".formatted(id);
+        }
+
+        found.setName(name);
+        found.setAge(age);
+
+        return "%d번 사람이 수정되었습니다.".formatted(id);
+    }
+
+    @GetMapping("/home/reqAndResp")
+    @ResponseBody
+    public void showReqAndResp(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        int age = Integer.parseInt(req.getParameter("age"));
+        resp.getWriter().append("Hello, you are %d years old.".formatted(age));
+    }
+
+    @GetMapping("/home/cookie/increase")
+    @ResponseBody
+    public int showCookieIncrease(HttpServletRequest req, HttpServletResponse resp) throws IOException { // 리턴되는 int 값은 String 화 되어서 고객(브라우저)에게 전달된다.
+        int countInCookie = 0;
+
+        if (req.getCookies() != null) {
+            countInCookie = Arrays.stream(req.getCookies())
+                    .filter(cookie -> cookie.getName().equals("count"))
+                    .map(cookie -> cookie.getValue())
+                    .mapToInt(Integer::parseInt)
+                    .findFirst()
+                    .orElse(0);
+        }
+
+        int newCountInCookie = countInCookie + 1;
+
+        resp.addCookie(new Cookie("count", newCountInCookie + ""));
+
+        return newCountInCookie;
+    }
 }
 
 class Car {
@@ -228,12 +313,31 @@ class Car {
 
 @AllArgsConstructor
 @Getter
-//lombok라이브러리를 가져왔기때문에 이렇게
-// @Getter @Setter 사용가능함! 만약 안사용하면 위에 코드 처럼 일일히 다써야함
 class CarV2 {
     private final int id;
     private final int speed;
     @Setter
     private String name;
     private final List<Integer> relatedIds;
+}
+
+@AllArgsConstructor
+@Getter
+@ToString
+class Person {
+    private static int lastId;
+    private final int id;
+    @Setter
+    private String name;
+    @Setter
+    private int age;
+
+
+    static {
+        lastId = 0;
+    }
+
+    Person(String name, int age) {
+        this(++lastId, name, age);
+    }
 }
