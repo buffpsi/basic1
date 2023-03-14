@@ -261,6 +261,7 @@ public class HomeController {
 
     @GetMapping("/home/cookie/increase")
     @ResponseBody
+    //req는 받을 편지 쿠키를 받아오는 곳 , resp
     public int showCookieIncrease(HttpServletRequest req, HttpServletResponse resp) throws IOException { // 리턴되는 int 값은 String 화 되어서 고객(브라우저)에게 전달된다.
         int countInCookie = 0;
 
