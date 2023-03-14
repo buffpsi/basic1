@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class HomeController {
     String s1 = "반갑습니다";
     String s2 = "즐거웠습니다";
+    int num =0;
     @GetMapping("/home/main")
     // @GetMapping("/home/main") 의 의미
     // 개발자가 스프링부트에게 말한다.
@@ -35,4 +36,12 @@ public class HomeController {
         return s2;
     }
 
+    @GetMapping("/home/increase")
+    @ResponseBody
+    public int showIncrease(){
+        if (num > 5){
+            num = 0;
+        }
+        return num++;
+    }
 }
